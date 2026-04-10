@@ -1,68 +1,58 @@
-**You can edit functions in `graph_agent.py`, and in evaluator.py can change test_mode (LEGACY is langchain mode, GRAPH is langgraph)**  
+# Assignment 3: Autonomous Multi-Doc Financial Analyst
 
-# 🛠️ Prerequisites
-Before you begin, ensure you have the following installed:
+**Student Name:** Paranchai Chianwichai  
+**Student ID:** 114522606  
+**LLM Model Used:** gpt-40-mini
 
-* Python 3.11 (Strict requirement) 
+## Benchmark Results Summary
 
-* Google Cloud API Key or other LLM Key
-# ⚙️ Environment Setup
-### 1. Virtual Environment Setup
+The following table summarizes the evaluation scores across different chunk sizes, embedding models, and agent architectures:
 
-It is highly recommended to use a virtual environment to manage dependencies.
+| Chunk Size | Embedding Model | Legacy Mode (LangChain) | Graph Mode (LangGraph) |
+| :--- | :--- | :--- | :--- |
+| **1000** | `text-embedding-3-small` | 9/14 | 9/14 |
+| **1000** | `text-embedding-3-large` | 10/14 | 11/14 |
+| **2000** | `text-embedding-3-small` | 6/14 | 10/14 |
+| **2000** | `text-embedding-3-large` | 9/14 | 10/14 |
+| **3000** | `text-embedding-3-small` | 9/14 | 10/14 |
+| **3000** | `text-embedding-3-large` | 10/14 | 11/14 |
 
-**For macOS / Linux:**
-```
-# Create virtual environment
+---
+
+## 1. Comparison of Differing Embedding Models
+
+For this evaluation, two different embedding models from OpenAI were compared: `text-embedding-3-small` and `text-embedding-3-large`.
+
+**Analysis:** Based on the benchmark data, `text-embedding-3-large` consistently outperformed or matched `text-embedding-3-small` across all configurations.
+
+---
+
+## 2. Chunk Size Impact: Context Precision vs. Context Completeness
+
+### Small Chunks (1000) - Emphasizing "Context Precision"
+* **Advantage:** The LLM receives highly focused, concise text snippets, effectively eliminating irrelevant noise. When paired with a powerful embedding model (Large), this precision yielded the peak score of 11/14.
+* **Trade-off:** There is a high risk of "table splitting." A massive Consolidated Statement table might be cut in half, separating the year headers (e.g., 2023, 2024) from the actual financial figures. If this happens, the agent loses the ability to map the numbers to the correct year.
+
+### Large Chunks (3000) - Emphasizing "Context Completeness"
+* **Advantage:** Ensures that large financial tables remain structurally intact within a single chunk. The agent can see both the column headers and the data rows simultaneously, preventing alignment errors.
+* **Trade-off:** Retrieving multiple massive chunks (e.g., k=3) floods the LLM with excessive text. This can trigger the "Lost in the Middle" phenomenon, where the LLM's attention span falters, and it overlooks specific numbers hidden deep within the dense context. Furthermore, it significantly increases token consumption.
+
+### Conclusion
+While 2000 serves as a safe baseline, the optimal configuration for this specific financial task was utilizing a smaller chunk size (1000) for strict precision, offset by the high semantic accuracy of a Large embedding model and the self-correcting routing of LangGraph to handle any retrieval misses.
+
+---
+
+## 🚀 How to Run the Project
+
+### 1. Environment Setup
+It is highly recommended to use a virtual environment (Python 3.11).
+
+**Create and activate the environment:**
+```bash
+# macOS / Linux
 python -m venv venv
-
-# Activate environment
 source venv/bin/activate
-```
-**For Windows:**
-```
-# Create virtual environment
+
+# Windows
 python -m venv venv
-
-# Activate environment
 venv\Scripts\activate
-```
-
-### 2. Install Dependencies
-
-`pip install -r requirements.txt`
-
-### 3. Environment Variables (.env)
-
-Rename the file `.env_example` to `.env` in the root directory and add your API_KEY
-
-# 📂 File Descriptions
-
-* **data/:** Folder containing the raw PDF financial reports
-* **langgraph_agent.py:** [MAIN WORKSPACE] This is where you will write your code. It contains the logic for:
-  * PDF Ingestion: `initialize_vector_dbs()`
-
-  *  Graph Nodes: `retrieve_node`, `grade_documents_node`, `generate_node`, `rewrite_node`.
-
-  *  Legacy Agent: `run_legacy_agent` (The baseline for comparison).
-* **evaluator.py:** The benchmark testing script. It runs a suite of test cases (Apple Revenue, Tesla R&D, Comparison, Traps) and uses "LLM-as-a-Judge" to score your agent (Pass/Fail).
-* **config.py:** Configuration file that handles API key loading and initializes the LLM and Embedding models.
-
-
-# 📝 Student Tasks
-**You need to complete the TODO sections in `langgraph_agent.py`.**
-* Task 1 (Legacy): Implement the run_legacy_agent Prompt Template to establish a baseline (langchain).
-
-* Task 2 (Router): Implement the retrieve_node logic to route queries to "apple", "tesla", or "both".
-
-* Task 3 (Grader): Implement the grade_documents_node to filter out irrelevant documents.
-
-* Task 4 (Generator): Implement the generate_node to answer questions in English with Citations.
-
-* Task 5 (Rewriter): Implement the rewrite_node to refine search queries when retrieval fails.
-
-# 🚀 Execution Order
-
-* Step1: `python build_rag.py`: Before running any agents, you must ingest the PDFs and convert them into vector embeddings. This allows you to experiment with different chunking strategies without re-running the evaluation logic every time.
-* Step2: `python evaluator.py`: Once the database is ready, run the evaluator to benchmark your agent.
-  
